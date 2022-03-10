@@ -16,6 +16,7 @@ import org.nitb.excelmapper.enums.ExcelDocumentType;
 import org.nitb.excelmapper.exceptions.ExcelMapperException;
 import org.nitb.excelmapper.operative.js.JavaScriptEngineManager;
 import org.nitb.excelmapper.operative.transformation.ExcelColumnTransformer;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -43,6 +44,8 @@ public class ExcelMapper {
 
     if (type.equals(ExcelDocumentType.BASIC_MAPPING)) {
       fromBasicToFile(workbook, documentObject, documentClass);
+    } else {
+      throw new NotImplementedException();
     }
 
     return workbook;
@@ -55,7 +58,8 @@ public class ExcelMapper {
       final Class<?> documentClass = documentObject.getClass();
       final ExcelDocument documentAnnotation = documentClass.getAnnotation(ExcelDocument.class);
       final boolean useClassname = documentAnnotation.useClassname();
-      workBookName = useClassname ? documentClass.getTypeName() : documentAnnotation.name();
+      workBookName = useClassname ? documentClass.getTypeName() : documentAnnotation.name().isEmpty() ?
+              String.format("ExcelMappingObject_%d.xlsx", System.currentTimeMillis()) : documentAnnotation.name();
     } else {
       workBookName = filename;
     }
@@ -82,12 +86,24 @@ public class ExcelMapper {
             .filter(x -> x.getType().isAnnotationPresent(ExcelBasicSheet.class)).collect(Collectors.toList());
 
     try {
+      int sheetNo = 0;
+      final Map<String, Integer> sheetNameCount = new HashMap<>();
+
       for (final Field sheet : sheets) {
         final Object sheetObject = sheet.get(documentObject);
         final Class<?> fieldClass = sheet.getType();
         final ExcelBasicSheet sheetAnnotation = fieldClass.getAnnotation(ExcelBasicSheet.class);
         final boolean useClassname = sheetAnnotation.useClassname();
-        final String sheetName = useClassname ? fieldClass.getTypeName() : sheetAnnotation.name();
+        String sheetName = useClassname ? fieldClass.getTypeName() : sheetAnnotation.name().isEmpty()
+                ? "Sheet" : sheetAnnotation.name();
+
+        if (sheetNameCount.containsKey(sheetName)) {
+          int count = sheetNameCount.get(sheetName) + 1;
+          sheetNameCount.put(sheetName, count);
+          sheetName = String.format("%s %d", sheetName, count);
+        } else {
+          sheetNameCount.put(sheetName, 1);
+        }
 
         final Sheet workSheet = workbook.createSheet(sheetName);
 
@@ -150,9 +166,9 @@ public class ExcelMapper {
             if (cellConditions.length > 0) {
               try (Context ctx = Context.enter()) {
                 final Global global = new Global(ctx);
-                global.defineProperty(column.getName(), value, 0);
+                global.defineProperty("cell", value, 0);
                 global.defineProperty("i", i, 0);
-                global.defineProperty("columns", data, 0);
+                global.defineProperty("column", data, 0);
 
                 for (Map.Entry<String, CellStyle> condition : cellConditionalStyles.entrySet()) {
                   if (JavaScriptEngineManager.checkCondition(ctx, global, condition.getKey())) {

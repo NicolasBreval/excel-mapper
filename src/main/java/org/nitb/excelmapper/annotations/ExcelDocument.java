@@ -1,6 +1,5 @@
 package org.nitb.excelmapper.annotations;
 
-import org.nitb.excelmapper.annotations.basic.ExcelBasicSheet;
 import org.nitb.excelmapper.enums.ExcelDocumentType;
 
 import java.lang.annotation.ElementType;
@@ -9,30 +8,28 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines a class as an Excel document
+ * Defines a class as an object serializable to a xlsx file
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface ExcelDocument {
 
   /**
-   * Defines type of document.
+   * Used to specify mapper how to serialize object.
    *
-   * If is BASIC_MAPPING, mapper transforms annotated variables with @ExcelBasicSheet annotation
-   * to sheets automatically. It's important for BASIC_MAPPING that properties annotated with
-   * @ExcelBasicSheet that they are collections.
-   *
-   * In other hand, if is COMPLEX_MAPPING, each class contains some annotations to allocate data inside sheets.
-   *
-   * @see ExcelBasicSheet
+   * If type is BASIC_MAPPING, all Collection-based object with annotation {@link org.nitb.excelmapper.annotations.basic.ExcelBasicSheet}
+   * are recognised as sheets and their properties are recognised as sheet columns
    */
   ExcelDocumentType type() default ExcelDocumentType.BASIC_MAPPING;
 
   /**
-   * Defines name of file to produce. This annotation is only important when you use mapper for transform objects into files, else
-   * is not needed to override the value
+   * Default file name if user doesn't specify one. If this property is an empty String, mapper puts a generic name
+   * like ExcelMappingObject_%d.xlsx, being %d the creation timestamp
    */
-  String name() default "ExcelMappingOutput.xlsx";
+  String name() default "";
 
+  /**
+   * If this property is true, filename will be the name of serialized class
+   */
   boolean useClassname() default false;
 }

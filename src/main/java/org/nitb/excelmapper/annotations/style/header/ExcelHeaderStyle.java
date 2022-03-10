@@ -8,10 +8,22 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Defines cell and font styles applied to first cell of column, treated as header
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface ExcelHeaderStyle {
+
+  /**
+   * Defines font to apply to cell
+   * @see ExcelFontStyle
+   */
   ExcelFontStyle font() default @ExcelFontStyle;
 
+  /**
+   * Defines style (color, alignment, position, indentation, ...) to apply to cell
+   * @see ExcelCellStyle
+   */
   ExcelCellStyle style() default @ExcelCellStyle;
 }
